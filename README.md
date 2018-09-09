@@ -48,6 +48,10 @@ This project is licensed under the GNU GPLv3 license - see the [LICENSE.md](LICE
 * NovaCygni - the author of V3n0m-Scanner
 * d4rkc4t - the author of d4rkd0rk3r
 * Yervoy (Kornel) - a good friend; thank you for motivating me!
-* My SO Wiktoria
+* My SO Wiktoria.
 
+## Legal disclaimer
+```
+This program is meant for educational purposes only. The author is not responsible for any damage caused by this program. It is the end user's responsibility to obey local and federal laws.
+```
 ## Thank you! 
