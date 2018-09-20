@@ -4,7 +4,10 @@ import urllib.parse as urlparse
 import xml.etree.ElementTree
 import re 
 import asyncio, aiohttp 
+import main
 import curses, datetime 
+import settings 
+import proxy 
 
 from errorparse import add_url_params, generate_injection_payload, check_error_present, get_url_params
 from aiohttp import ClientSession
@@ -16,14 +19,19 @@ checked = 0
 
 async def check_url(session, url, which, stdscr):
     params = get_url_params(url)
-    global checked # do egzekucji w nastepnym update
+    global checked
 
     for (key, value) in params:
         aug_value = value + generate_injection_payload()
         aug_url = add_url_params(url, dict([(key, aug_value)]))
         try:
-            timeout = aiohttp.ClientTimeout(total=15)
-            async with session.get(aug_url, timeout=timeout) as response_object:
+            timeout = aiohttp.ClientTimeout(total=settings.SCAN_REQUEST_TIMEOUT)
+            session_kwargs = {'timeout': timeout}
+
+            if proxy.is_proxied():
+                session_kwargs['proxy'] = proxy.get_proxy_url()
+
+            async with session.get(aug_url, **session_kwargs) as response_object:
                 response = await response_object.text() 
                 err = check_error_present(response)
                 if err:
@@ -45,6 +53,7 @@ async def scan_urls(stdscr, urls):
     stdscr.border()
     stdscr.addstr(1, 1, "Scanning URLs for SQL injection...")
     stdscr.addstr(3, 1, "Please be patient, it's working")
+    stdscr.addstr(4, 1, "Proxy: {}".format("enabled" if proxy.is_proxied() else "disabled"))
 
     connector = aiohttp.TCPConnector(limit=len(urls))
     async with aiohttp.ClientSession(connector=connector) as session:
@@ -90,5 +99,9 @@ async def scan_urls(stdscr, urls):
                 if i < 15:
                     stdscr.addstr(i, 1, e)
                     i += 1
+        if c == ord('b'):
+            stdscr.clear()
+            #main.gather(stdscr)
         stdscr.refresh()
     return result
+

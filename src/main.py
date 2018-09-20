@@ -27,6 +27,8 @@ def parse_arguments():
     parser.add_argument('quantity', help='Specifies how many dorks to use. 0 means all',type=int)
     parser.add_argument('--pages', help='Specifies how many search engine pages should be scanned per 1 dork [25-100]',type=int,const=25, nargs='?')
     parser.add_argument('--norandom', help='Do NOT choose the dorks randomly', action="store_true")
+    parser.add_argument("--tor", help='Use TOR for anonymization purposes (127.0.0.1:9060)', action="store_true")
+    parser.add_argument("--proxy", help="Full URL of a proxy, ex. socks5://127.0.0.1:9050", type=str)
     args = vars(parser.parse_args())
 
     if "." not in args["domain"]:
@@ -40,6 +42,9 @@ def parse_arguments():
             exit(0)
         settings.PAGES_PER_DORK = int(args["pages"])
     
+    if args["tor"] is True:
+        settings.TOR_ENABLED = True 
+    
     settings.DOMAIN = args["domain"]
     settings.QUANTITY = args["quantity"]
     main()
@@ -49,7 +54,6 @@ def main():
     errorparse.parse_errors_file()
     stdscr = views.setup_curses()
 
-    domain = settings.DOMAIN
     amount = settings.QUANTITY
 
     if amount == 0:
@@ -67,13 +71,12 @@ def main():
                 d = all_dorks[i]
                 loaded_dorks.append(d)
                 i += 1
-
-    pages = u_round(settings.PAGES_PER_DORK, base=25)
+        pages = u_round(settings.PAGES_PER_DORK, base=25)
     
     eventloop = asyncio.get_event_loop()
 
     gathered_urls = eventloop.run_until_complete(
-        collect.collect_urls(stdscr, loaded_dorks, domain, int(pages)))
+        collect.collect_urls(stdscr, loaded_dorks, settings.DOMAIN, int(pages)))
     gathered_urls = sort_urls(gathered_urls)
 
     stdscr.addstr(10, 1, "Success! Gathered {} urls".format(len(gathered_urls)), curses.color_pair(1))
